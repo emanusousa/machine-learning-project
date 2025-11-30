@@ -10,3 +10,17 @@ services:
       - .env
     volumes:
       - ./fastapi:/app
+
+  jupyter:
+    build:
+      context: ./notebooks
+      dockerfile: Dockerfile
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./data:/home/jovyan/data
+    environment:
+      JUPYTER_TOKEN: "mlproject"
+    command: start-notebook.sh --NotebookApp.token='mlproject'
