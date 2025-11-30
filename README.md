@@ -36,3 +36,11 @@ A API ficará disponível em:
 ```
 http://localhost:8000/
 ```
+
+### 6. Acessar o JUPYTER
+
+```
+http://127.0.0.1:8888/lab/workspaces/auto-J/tree/work/heart.ipynb
+
+TOKEN = mlproject
+```
