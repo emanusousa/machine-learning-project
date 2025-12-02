@@ -1,0 +1,60 @@
+version: '3'
+
+services:
+  fastapi:
+    build:
+      context: ./fastapi
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./fastapi:/app
+
+  jupyter:
+    build:
+      context: ./notebooks
+      dockerfile: Dockerfile
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./data:/home/jovyan/data
+    environment:
+      JUPYTER_TOKEN: "mlproject"
+    command: start-notebook.sh --NotebookApp.token='mlproject'
+
+  thingsboard:
+    image: thingsboard/tb-postgres:3.3.4
+    container_name: thingsboard
+    restart: always
+    ports:
+      - "8080:9090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://thingsboard-postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: thingsboard
+      SPRING_DATASOURCE_PASSWORD: thingsboard
+    depends_on:
+      - thingsboard-postgres
+    volumes:
+      - thingsboard_data:/data
+      - thingsboard_logs:/var/log/thingsboard
+
+  thingsboard-postgres:
+    image: postgres:14
+    container_name: thingsboard-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_USER: thingsboard
+      POSTGRES_PASSWORD: thingsboard
+    volumes:
+      - tb_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
+volumes:
+  thingsboard_data:
+  thingsboard_logs:
+  tb_pgdata:
