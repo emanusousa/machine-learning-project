@@ -1,0 +1,10 @@
+artifact_location: file:///Users/guilherme/Documents/Cesar/6/ML/machine-learning-project/notebooks/mlruns/179780408009703120/models/m-54db602678a349f392c7417f9f3bd93e/artifacts
+creation_timestamp: 1764687024160
+experiment_id: '179780408009703120'
+last_updated_timestamp: 1764687025808
+model_id: m-54db602678a349f392c7417f9f3bd93e
+model_type: null
+name: model
+source_run_id: d8f38053162c4e4b9eda1692a9ca6c05
+status: 2
+status_message: null
