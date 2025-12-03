@@ -4,68 +4,70 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
+# ---------------------------------------------------------
+# Carregar variáveis do .env
+# ---------------------------------------------------------
 load_dotenv()
 
 THINGSBOARD_URL = os.getenv("THINGSBOARD_URL")
 ACCESS_TOKEN = os.getenv("THINGSBOARD_DEVICE_ACCESS_TOKEN")
 CSV_PATH = os.getenv("CSV_PATH")
-MLFLOW_URL = os.getenv("MLFLOW_URL")
+MLFLOW_URL = os.getenv("MLFLOW_URL", "")  # opcional
 
 if not THINGSBOARD_URL or not ACCESS_TOKEN or not CSV_PATH:
-    raise RuntimeError("Missing .env variables")
+    raise RuntimeError("Missing required environment variables (.env)")
 
 
 # ---------------------------------------------------------
-# Chamada ao MLflow — agora usando nomes UPPERCASE
+# Fallback de risco (sem MLflow)
 # ---------------------------------------------------------
 def call_mlflow_model(row: pd.Series) -> float:
-    features = {
-        "AGE": int(row["age"]),
-        "SEX": int(row["sex"]),
-        "CP": int(row["cp"]),
-        "TRESTBPS": int(row["trestbps"]),
-        "CHOL": int(row["chol"]),
-        "FBS": int(row["fbs"]),
-        "RESTECG": int(row["restecg"]),
-        "THALACH": int(row["thalach"]),
-        "EXANG": int(row["exang"]),
-        "OLDPEAK": float(row["oldpeak"]),
-        "SLOPE": int(row["slope"]),
-        "CA": int(row["ca"]),
-        "THAL": int(row["thal"]),
-    }
+    """
+    Tenta chamar MLflow. Se não houver MLFLOW_URL configurado
+    ou ocorrer erro, retorna risco default = 0.5
+    """
+    if not MLFLOW_URL:
+        return 0.5
 
     payload = {
-        "dataframe_split": {
-            "columns": list(features.keys()),
-            "data": [list(features.values())]
-        }
+        "dataframe_records": [
+            {
+                "AGE": int(row["age"]),
+                "SEX": int(row["sex"]),
+                "CP": int(row["cp"]),
+                "TRESTBPS": int(row["trestbps"]),
+                "CHOL": int(row["chol"]),
+                "FBS": int(row["fbs"]),
+                "RESTECG": int(row["restecg"]),
+                "THALACH": int(row["thalach"]),
+                "EXANG": int(row["exang"]),
+                "OLDPEAK": float(row["oldpeak"]),
+                "SLOPE": int(row["slope"]),
+                "CA": int(row["ca"]),
+                "THAL": int(row["thal"]),
+            }
+        ]
     }
 
-    resp = requests.post(MLFLOW_URL, json=payload)
-    resp.raise_for_status()
-    data = resp.json()
-
-    # mlflow sklearn normalmente retorna {"predictions": [...]}
-    if isinstance(data, dict) and "predictions" in data:
-        return float(data["predictions"][0])
-
-    raise RuntimeError(f"Unexpected MLflow response: {data}")
+    try:
+        resp = requests.post(MLFLOW_URL, json=payload, timeout=5)
+        resp.raise_for_status()
+        preds = resp.json().get("predictions")
+        return float(preds[0]) if preds else 0.5
+    except Exception as e:
+        print(f"[MLFLOW ERROR] {e} -> usando risco=0.5")
+        return 0.5
 
 
 # ---------------------------------------------------------
-# Envio ao ThingsBoard
+# Enviar linha ao ThingsBoard
 # ---------------------------------------------------------
 def send_row(row: pd.Series, ts: int, index: int):
     url = f"{THINGSBOARD_URL}/api/v1/{ACCESS_TOKEN}/telemetry"
 
-    try:
-        risk = call_mlflow_model(row)
-    except Exception as e:
-        print(f"[MLFLOW ERROR] row={index}: {e}")
-        return
+    risk = call_mlflow_model(row)
 
-    tb_payload = {
+    payload = {
         "ts": ts,
         "values": {
             "age": int(row["age"]),
@@ -82,29 +84,33 @@ def send_row(row: pd.Series, ts: int, index: int):
             "ca": int(row["ca"]),
             "thal": int(row["thal"]),
             "target": int(row["target"]),
-            "risk_score": risk,
-        }
+            "risk_score": float(risk),
+        },
     }
 
-    r = requests.post(url, json=tb_payload)
+    resp = requests.post(url, json=payload)
 
-    if r.status_code == 200:
-        print(f"[OK] {index} | risk={risk:.4f}")
+    if resp.status_code == 200:
+        print(f"[OK] row={index}  risk={risk:.3f}")
     else:
-        print(f"[TB ERROR] row={index}: {r.status_code} - {r.text}")
+        print(f"[TB ERROR] row={index}: {resp.status_code} - {resp.text}")
 
 
+# ---------------------------------------------------------
+# Main
+# ---------------------------------------------------------
 def main():
+    print(f"Lendo CSV de: {CSV_PATH}")
     df = pd.read_csv(CSV_PATH)
-    print(f"Sending {len(df)} rows...")
+    print(f"Enviando {len(df)} linhas...")
 
     base_ts = int(time.time() * 1000)
 
-    for i, (_, row) in enumerate(df.iterrows(), 1):
+    for i, (_, row) in enumerate(df.iterrows(), start=1):
         ts = base_ts + i * 1000
         send_row(row, ts, i)
 
-    print("FINISHED.")
+    print("FINISHED CSV LOAD.")
 
 
 if __name__ == "__main__":

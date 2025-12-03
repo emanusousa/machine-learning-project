@@ -2,18 +2,12 @@ services:
   fastapi:
     build:
       context: ./fastapi
-    container_name: fastapi
-    restart: unless-stopped
     ports:
       - "8000:8000"
-    # usa o .env que está DENTRO da pasta fastapi
     env_file:
-      - ./fastapi/.env
+      - .env
     volumes:
       - ./fastapi:/app
-    depends_on:
-      - mlflow
-      - thingsboard  # garante que o TB esteja subindo antes
 
   jupyter:
     build:
@@ -21,7 +15,7 @@ services:
       dockerfile: Dockerfile
     container_name: jupyter
     ports:
-      - "8889:8888"              # Jupyter em http://localhost:8889
+      - "8888:8888"
     volumes:
       - ./notebooks:/home/jovyan/work
       - ./data:/home/jovyan/data
@@ -29,7 +23,22 @@ services:
       JUPYTER_TOKEN: "mlproject"
     command: start-notebook.sh --NotebookApp.token='mlproject'
 
-  # Postgres do ThingsBoard
+  thingsboard:
+    image: thingsboard/tb-postgres:3.3.4
+    container_name: thingsboard
+    restart: always
+    ports:
+      - "8080:9090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://thingsboard-postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: thingsboard
+      SPRING_DATASOURCE_PASSWORD: thingsboard
+    depends_on:
+      - thingsboard-postgres
+    volumes:
+      - thingsboard_data:/data
+      - thingsboard_logs:/var/log/thingsboard
+
   thingsboard-postgres:
     image: postgres:14
     container_name: thingsboard-postgres
@@ -43,107 +52,47 @@ services:
     ports:
       - "5434:5432"
 
-  thingsboard:
-    image: thingsboard/tb-postgres:3.3.4
-    container_name: thingsboard
-    restart: always
-    depends_on:
-      - thingsboard-postgres
-    ports:
-      - "8080:9090"              # UI: http://localhost:8080
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://thingsboard-postgres:5432/thingsboard
-      SPRING_DATASOURCE_USERNAME: thingsboard
-      SPRING_DATASOURCE_PASSWORD: thingsboard
-    volumes:
-      - thingsboard_data:/data
-      - thingsboard_logs:/var/log/thingsboard
-
-  # Postgres exclusivo do Trendz
-  trendz-postgres:
-    image: postgres:14
-    container_name: trendz-postgres
-    restart: always
-    environment:
-      POSTGRES_DB: trendz
-      POSTGRES_USER: trendz
-      POSTGRES_PASSWORD: trendz
-    volumes:
-      - trendz_pgdata:/var/lib/postgresql/data
-    ports:
-      - "5435:5432"              # opcional: acessar o PG do Trendz pelo host
-
-  mlflow:
-    image: python:3.9-slim
-    container_name: mlflow
+  tb-loader:
+    image: python:3.11-slim
     working_dir: /app
-    restart: unless-stopped
     volumes:
-      - ./mlruns:/app/mlruns      # precisa conter o experimento/modelo
+      - ./thingsboard:/app
+      - ./data:/data
+    command: >
+      sh -c "
+      pip install -r requirements.txt >/dev/null 2>&1 || true;
+      echo '[TB-LOADER] Aguardando ThingsBoard (60s)...';
+      sleep 60;
+      python csv_to_thingsboard.py;
+      "
     environment:
-      MLFLOW_ENV_MANAGER: local
-    ports:
-      - "5001:5001"               # MLflow model server: http://localhost:5001
-    command:
-      - sh
-      - -c
-      - >
-        pip install --no-cache-dir mlflow==3.1.4 scikit-learn &&
-        mlflow models serve --env-manager local
-        -m /app/mlruns/179780408009703120/models/m-c68ebe2764e942f6bc30316120f613c7/artifacts
-        -h 0.0.0.0
-        -p 5001
-
-  trendz-python-executor:
-    image: thingsboard/trendz-python-executor:1.14.0
-    container_name: trendz-python-executor
-    restart: always
-    ports:
-      - "8181:8181"
-    environment:
-      SCRIPT_ENGINE_RUNTIME_TIMEOUT: 30000
-      EXECUTOR_MANAGER: 1
-      EXECUTOR_SCRIPT_ENGINE: 6
-      THROTTLING_QUEUE_CAPACITY: 10
-      THROTTLING_THREAD_POOL_SIZE: 6
-      NETWORK_BUFFER_SIZE: 10485760
-    volumes:
-      - trendz_executor_data:/python-executor
-
-  trendz:
-    image: thingsboard/trendz:1.14.0
-    container_name: trendz
-    restart: always
+      CSV_PATH: /data/raw/heart.csv
+      THINGSBOARD_URL: http://thingsboard:9090
+      THINGSBOARD_DEVICE_ACCESS_TOKEN: KzODJ2qEXZIknI1qVn0A
+      MLFLOW_URL: ""
     depends_on:
-      - thingsboard
-      - trendz-postgres
-      - trendz-python-executor
-      - mlflow
-    ports:
-      - "8890:8888"              # Trendz UI: http://localhost:8890
+      thingsboard:
+        condition: service_started
+
+  heart-ingest:
+    image: curlimages/curl:8.11.0
+    depends_on:
+      tb-loader:
+        condition: service_completed_successfully
+      fastapi:
+        condition: service_started
+      thingsboard:
+        condition: service_started
+    command: >
+      sh -c "
+      echo '[HEART-INGEST] tb-loader finalizado, iniciando ingest...';
+      curl -X POST http://fastapi:8000/ingest/heart
+      "
     environment:
-      # URL do ThingsBoard visto de dentro da rede Docker
-      TB_API_URL: http://thingsboard:9090
-
-      # Banco do Trendz
-      SPRING_DATASOURCE_URL: jdbc:postgresql://trendz-postgres:5432/trendz
-      SPRING_DATASOURCE_USERNAME: trendz
-      SPRING_DATASOURCE_PASSWORD: trendz
-
-      # Python Executor
-      SCRIPT_ENGINE_PROVIDER: DOCKER_CONTAINER
-      SCRIPT_ENGINE_DOCKER_PROVIDER_URL: trendz-python-executor:8181
-      SCRIPT_ENGINE_TIMEOUT: 30000
-
-    volumes:
-      - trendz_data:/data
-      - trendz_logs:/var/log/trendz
+      THINGSBOARD_URL: http://thingsboard:9090
+      THINGSBOARD_DEVICE_ID: 37f2e300-d093-11f0-8a69-fbf8c35e0488
 
 volumes:
   thingsboard_data:
   thingsboard_logs:
   tb_pgdata:
-  trendz_pgdata:
-  trendz_data:
-  trendz_logs:
-  trendz_executor_data:
