@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   fastapi:
     build:
@@ -30,7 +28,7 @@ services:
     container_name: thingsboard
     restart: always
     ports:
-      - "8080:9090"
+      - "8080:9090" # host: 8080, container: 9090
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://thingsboard-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: thingsboard
@@ -53,6 +51,29 @@ services:
       - tb_pgdata:/var/lib/postgresql/data
     ports:
       - "5434:5432"
+
+  tb-loader:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./thingsboard:/app
+      - ./data:/data
+    command:
+      [
+        "sh",
+        "-c",
+        "pip install -r requirements.txt >/dev/null 2>&1 || true; python csv_to_thingsboard.py",
+      ]
+    depends_on:
+      - thingsboard
+
+  heart-ingest:
+    image: curlimages/curl:8.11.0
+    depends_on:
+      - fastapi
+      - tb-loader
+    command:
+      ["sh", "-c", "sleep 20 && curl -X POST http://fastapi:8000/ingest/heart"]
 
 volumes:
   thingsboard_data:
