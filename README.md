@@ -135,6 +135,45 @@ Login padrão do tenant (se você não alterou):
 
 Por aqui você visualiza o dispositivo, telemetria e dashboards.
 
+#### Configurando o dispositivo e tokens no ThingsBoard
+
+Para que o serviço `tb-loader` envie corretamente os dados do CSV para o ThingsBoard, siga estes passos:
+
+1. **Arquivos de ambiente**
+  - Garanta que você tenha o `.env` da FastAPI configurado (seção 3 deste README), com as variáveis:
+    - `THINGSBOARD_URL`
+    - `THINGSBOARD_TENANT_USER`
+    - `THINGSBOARD_TENANT_PASSWORD`
+    - `THINGSBOARD_DEVICE_ID` (vamos preencher no passo 3).
+  - Crie um arquivo `.env` na pasta `thingsboard/` para o loader, onde ficará o token do dispositivo:
+
+  ```env
+  THINGSBOARD_DEVICE_ACCESS_TOKEN=SEU_TOKEN_DO_DEVICE_AQUI
+  ```
+
+2. **Criar o Device no ThingsBoard**
+  - Acesse `http://localhost:8080` e faça login como tenant.
+  - Menu lateral → **Devices** → **Add new device**.
+  - Dê um nome ao dispositivo (por exemplo, `heart-device`) e salve.
+
+3. **Copiar Device ID e Access Token**
+  - Ainda na tela do dispositivo recém-criado, vá em **Details**:
+    - Copie o **Device ID** e cole no `.env` da FastAPI na variável `THINGSBOARD_DEVICE_ID`.
+    - Copie o **Access token** do dispositivo e cole no `.env` da pasta `thingsboard/` na variável `THINGSBOARD_DEVICE_ACCESS_TOKEN`.
+
+4. **Reiniciar os containers**
+  - Depois de atualizar os arquivos `.env`, volte para a raiz do projeto e reinicie a stack:
+
+  ```powershell
+  docker compose down
+  docker compose up --build
+  ```
+
+5. **Verificar a telemetria no ThingsBoard**
+  - Com tudo rodando, acesse novamente o ThingsBoard.
+  - Vá em **Devices**, clique no dispositivo que você criou.
+  - Abra a aba **Latest telemetry**: ali você verá os dados do CSV `data/raw/heart.csv` sendo enviados pelo serviço `tb-loader`.
+
 ### 5.3. Jupyter Notebook
 
 - URL: `http://127.0.0.1:8888`
