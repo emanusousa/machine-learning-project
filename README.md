@@ -1,5 +1,7 @@
 ## Heart Disease – Pipeline de Dados e ML
 
+> Observação: a branch principal deste repositório é a **`docker`**, já configurada como **default** no GitHub. Certifique-se de estar nessa branch ao clonar ou contribuir com o projeto.
+
 Este projeto implementa uma pipeline completa para o **dataset de doenças cardíacas**:
 
 - Carrega um CSV com dados de pacientes para o **ThingsBoard** (plataforma de IoT).
@@ -206,6 +208,7 @@ Depois, basta executar as células em ordem para reproduzir a análise e os mode
 	- Converte para `pandas.DataFrame`.
 	- Salva um CSV no bucket S3 configurado no `.env`.
 5. No **Jupyter**, você pode usar esses dados para análise e para treinar modelos de Machine Learning.
+6. Durante o treino nos notebooks, os experimentos de Machine Learning (métricas, parâmetros e modelos) são registrados no **MLflow**, com artefatos salvos na pasta `mlruns/` na raiz do projeto, que podem ser visualizados via MLflow UI.
 
 ---
 
