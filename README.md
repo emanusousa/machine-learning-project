@@ -234,3 +234,66 @@ docker compose down
 - **Erro de credenciais AWS**: confira `AWS_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` em `fastapi/.env`.
 - **Login no ThingsBoard falha**: verifique se o container `thingsboard` está saudável e se usuário/senha do tenant estão corretos.
 
+## Membros
+- **Disciplina**: Aprendizado de Máquina - 2025.2.
+- **Instituição**: CESAR School.
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/emanusousa">
+        <img src="https://avatars.githubusercontent.com/emanusousa" width="100px;" alt="Foto de Emanuel Eduardo"/>
+        <br />
+        <sub><b>Emanuel Eduardo </b></sub>
+      </a>
+      <br />
+      <sub><b>✉️ eess2@cesar.school</b></sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/TalitaFraga">
+        <img src="https://avatars.githubusercontent.com/u/69424132?v=4" width="100px;" alt="Foto de Talita"/>
+        <br />
+        <sub><b>Talita Fraga</b></sub>
+      </a>
+      <br />
+      <sub><b>✉️ tdlf@cesar.school</b></sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/brunoribeirol">
+        <img src="https://avatars.githubusercontent.com/u/89156916?v=4" width="100px;" alt="Foto de Bruno"/>
+        <br />
+        <sub><b>Bruno Ribeiro</b></sub>
+      </a>
+      <br />
+      <sub><b>✉️ brlla@cesar.school</b></sub>
+    </td>
+     <td align="center">
+        <a href="https://github.com/igoralvesa">
+           <img src="https://avatars.githubusercontent.com/u/101803586?v=4" width="100px;" alt="Foto de Igor"/>
+           <br />
+           <sub><b>Igor Alves</b></sub>
+        </a>
+        <br />
+        <sub><b>✉️ iaa@cesar.school</b></sub>
+     </td>
+	<td align="center">
+        <a href="https://github.com/juliafelixcor">
+           <img src="https://avatars.githubusercontent.com/u/98843736?v=4" width="100px;" alt="Foto de Julia"/>
+           <br />
+           <sub><b>Julia Felix</b></sub>
+        </a>
+        <br />
+        <sub><b>✉️  jfc@cesar.school</b></sub>
+     </td>
+	<td align="center">
+        <a href="https://github.com/Victorgalves">
+           <img src="https://avatars.githubusercontent.com/u/99843784?v=4" width="100px;" alt="Foto de Victor"/>
+           <br />
+           <sub><b>Victor Guilherme</b></sub>
+        </a>
+        <br />
+        <sub><b>✉️  jfc@cesar.school</b></sub>
+     </td>
+  </tr>
+</table>
+
+
