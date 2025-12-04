@@ -225,11 +225,6 @@ Para desligar todos os serviços:
 docker compose down
 ```
 
-Se também quiser remover os volumes (apagando dados persistidos como o banco do ThingsBoard):
-
-```powershell
-docker compose down -v
-```
 
 ---
 
