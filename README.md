@@ -140,7 +140,7 @@ Por aqui você visualiza o dispositivo, telemetria e dashboards.
 Para que o serviço `tb-loader` envie corretamente os dados do CSV para o ThingsBoard, siga estes passos:
 
 1. **Arquivos de ambiente**
-  - Garanta que você tenha o `.env` da FastAPI configurado (seção 3 deste README), com as variáveis:
+  - Garanta que você tenha o `.env` dentro da pasta FastAPI configurado (seção 3 deste README), com as variáveis:
     - `THINGSBOARD_URL`
     - `THINGSBOARD_TENANT_USER`
     - `THINGSBOARD_TENANT_PASSWORD`
