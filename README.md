@@ -148,7 +148,9 @@ Para que o serviço `tb-loader` envie corretamente os dados do CSV para o Things
   - Crie um arquivo `.env` na pasta `thingsboard/` para o loader, onde ficará o token do dispositivo:
 
   ```env
-  THINGSBOARD_DEVICE_ACCESS_TOKEN=SEU_TOKEN_DO_DEVICE_AQUI
+  THINGSBOARD_URL=http://thingsboard:9090
+  THINGSBOARD_DEVICE_ACCESS_TOKEN= *SEU TOKEN DEVICE*
+  CSV_PATH=/data/raw/heart.csv
   ```
 
 2. **Criar o Device no ThingsBoard**
